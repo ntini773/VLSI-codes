@@ -1,0 +1,38 @@
+**Netlist to evaluate MOS C-V characterisitics
+
+.include TSMC_180nm.txt
+.param SUPPLY=1.8
+.param VGG=1.5
+.param LAMBDA=0.09u
+.param width_N={20*LAMBDA}
+.global gnd vdd
+
+VGS 	G 	gnd  sin(0 1.8 1k 000u 0 -90)
+**SIN(VO VA FREQ TD THETA PHASE) (page-87 NGSPICE manual V32 2020)
+VDS D   gnd 0.10V 
+
+M1      D       G       gnd     gnd  CMOSN   W={width_N}   L={2*LAMBDA}
++ AS={5*width_N*LAMBDA} PS={10*LAMBDA+2*width_N} AD={5*width_N*LAMBDA} PD={10*LAMBDA+2*width_N}
+
+** CV char
+.tran 1u 490u 10u
+
+.control
+set hcopypscolor = 1 *White background for saving plots
+set color0=white ** color0 is used to set the background of the plot (manual sec:17.7))
+set color1=black ** color1 is used to set the grid color of the plot (manual sec:17.7))
+
+run
+
+let x = (-VGS#branch)
+let y = deriv(V(G))
+let CG = x/y
+*plot V(G)
+*plot x
+*plot y
+set curplottitle="C(GS) vs VGS"
+plot CG vs V(G)
+
+hardcopy fig_mos_cv.eps CG vs V(G)
+** In command line if required use to create pdf using : epstopdf fig_mos_cv.eps
+.endc
